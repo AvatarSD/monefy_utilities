@@ -3,21 +3,45 @@ import pandas as pd
 import re
 import enum
 
+
+# Types
+class dir_t(enum.Enum):
+    DIRECT = 0
+    INVERT = 1
+
+class stats:
+    transaction = 0
+    buy = 0
+    sell = 0
+
+class money_move:
+    def __init__(self):
+        self.date_payment = None
+        self.date_income = None
+        self.date_begin = None
+        self.date_end = None
+        self.amount = 0
+        self.amount_company = None
+        self.account_from = None
+        self.account_to = None
+        self.categoty = str("-")
+        self.categoty_sub = None
+        self.agent = None
+        self.project = None
+        self.tags = []
+        self.comment = None
+
+
+# PARSE ARGS
 if len(sys.argv) < 2: 
     print("One arg required")
     sys.exit(-1)
 
 
+# 0. Init required vars
 moneyfee_table = pd.read_excel(sys.argv[1], engine='openpyxl')
+mm_table = []
 print("Shape of import", moneyfee_table.shape)
-
-class dir_t(enum.Enum):
-    DIRECT = 0
-    INVERT = 1
-
-transaction = 0
-buy = 0
-sell = 0
 
 # 1. Add additional column "handled"
 moneyfee_table['handled'] = False
@@ -26,6 +50,7 @@ moneyfee_table['handled'] = False
 for i,row in moneyfee_table.iterrows():
     print(f'{i+1}\{len(moneyfee_table)}           \r')
     if row["handled"] == True: continue
+    mm = money_move()
 
     # 1.1 Check category
     category = row["category"]
@@ -33,7 +58,7 @@ for i,row in moneyfee_table.iterrows():
     amount = float(str(row['amount']).replace(" ","").replace("\xa0",""))
     currency = row['currency.1']
 
-    # 1.2 Transaction
+    # 1.2 transaction
     categoty_match = re.match(r"(To|From) '(.*?)'", category)
     if categoty_match: 
         # 1.2.1 meet first "To \'%s\'" or "From\'%s\'"
@@ -67,18 +92,18 @@ for i,row in moneyfee_table.iterrows():
             dest_row['handled'] = True
             
             # 1.2.4 save transfer
-            transaction = transaction + 1
+            stats.transaction = stats.transaction + 1
 
             # 1.2.5 break, continue
             break
         
     # 1.3 Regular
     else:
-        # 1.3.2 save transaction
+        # 1.3.2 save stats transaction
         if amount > 0:
-            sell = sell+1
+            stats.sell = stats.sell+1
         else:
-            buy = buy+1
+            stats.buy = stats.buy+1
 
     # 1.4 mark handled
     row['handled'] = True
@@ -90,7 +115,7 @@ ungandled = moneyfee_table.loc[(moneyfee_table['handled'] == False)]
 print(ungandled)
 
 # 4. Save new list in specific format
-print(f'Solds: {sell}, Buys: {buy}, Transaction: {transaction}, Err: {len(ungandled)}')
-print(f'>> Total: {sell+buy+transaction*2+len(ungandled)}/{len(moneyfee_table)}')
+print(f'Solds: {stats.sell}, stats.buys: {stats.buy}, stats.transaction: {stats.transaction}, Err: {len(ungandled)}')
+print(f'>> Total: {stats.sell+stats.buy+stats.transaction*2+len(ungandled)}/{len(moneyfee_table)}')
 
 # print(moneyfee_table)
