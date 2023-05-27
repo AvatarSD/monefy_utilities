@@ -56,7 +56,8 @@ moneyfee_table['handled'] = False
 # 2. Iterate over rows of dataframe
 for i,row in moneyfee_table.iterrows():
     print(f'{i+1}\{len(moneyfee_table)}           ',end='\r')
-    if row["handled"] == True: continue
+
+    if moneyfee_table.at[i, "handled"] == True: continue
     mm = money_move()
 
     # 1.1 Check category
@@ -75,7 +76,7 @@ for i,row in moneyfee_table.iterrows():
     
         # 1.2.2 iterate over unhandled
         for dest_i, dest_row in moneyfee_table.loc[i:].iterrows():
-            if dest_row['handled'] is True: continue
+            if moneyfee_table.at[dest_i, 'handled'] == True: continue
             
             # 1.2.2.1 find "To \'%s\'" or "From\'%s\'" with s
             dest_category = dest_row["category"]
@@ -97,7 +98,9 @@ for i,row in moneyfee_table.iterrows():
             print(f"Row {i} + {dest_i} is transaction: dir:{str(dir)}, {dest_old_acc} --> {dest_new_acc}, amount: {amount} {currency}")
             
             # 1.2.3 mark dest handled
-            dest_row['handled'] = True
+            moneyfee_table.at[i, 'handled'] = True
+            moneyfee_table.at[dest_i, 'handled'] = True
+            stats.transaction = stats.transaction + 1
             
             # 1.2.4 save transfer
             mm.date = row["date"]
@@ -132,8 +135,8 @@ for i,row in moneyfee_table.iterrows():
         else:
             stats.buy = stats.buy+1
 
-    # 1.4 mark handled
-    row['handled'] = True
+        # 1.3.3 mark handled
+        moneyfee_table.at[i, 'handled'] = True
 print('>>>>\r\n')
 
 # 3. Check unhandled; Print inspection stat
