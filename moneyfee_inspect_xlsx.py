@@ -70,8 +70,8 @@ for i,row in moneyfee_table.iterrows():
     categoty_match = re.match(r"(To|From) '(.*?)'", category)
     if categoty_match: 
         # 1.2.1 meet first "To \'%s\'" or "From\'%s\'"
-        dir = dir_t.INVERT if categoty_match.group(0) == 'From' else dir_t.INVERT
-        new_acc = categoty_match.group(1)
+        dir = dir_t.DIRECT if categoty_match.group(1) == 'From' else dir_t.INVERT
+        new_acc = categoty_match.group(2)
     
         # 1.2.2 iterate over unhandled
         for dest_i, dest_row in moneyfee_table.loc[i:].iterrows():
@@ -81,17 +81,17 @@ for i,row in moneyfee_table.iterrows():
             dest_category = dest_row["category"]
             dest_categoty_match = re.match(r"(To|From) '(.*?)'", dest_category)
             if not dest_categoty_match : continue
-            
-            dest_dir = dir_t.INVERT if dest_categoty_match.group(0) == 'From' else dir_t.INVERT
+
+            dest_dir = dir_t.DIRECT if dest_categoty_match.group(1) == 'From' else dir_t.INVERT
             dest_new_acc = dest_row['account']
-            dest_old_acc = dest_categoty_match.group(1)
+            dest_old_acc = dest_categoty_match.group(2)
             dest_amount = float(str(dest_row['amount']).replace(" ","").replace("\xa0",""))
 
             # 1.2.2.2 same -amount value in "amount" field
             # 1.2.2.3 same account from 'category' column (%s in From or To) 
-            if (dest_dir is dir or old_acc is not dest_old_acc or new_acc is not dest_new_acc or amount is not -dest_amount): 
-                if len(dest_row)-1 is dest_i :
-                    print(f"Error, transaction not founded: {dest_dir} is {dir} or {old_acc} is not {dest_old_acc} or {new_acc} is not {dest_new_acc} or {amount} is not {-dest_amount}\r\n")
+            if ((dest_dir.value == dir.value) or (old_acc != dest_old_acc) or (new_acc != dest_new_acc) or (amount != -dest_amount)): 
+                if len(dest_row)-1 == dest_i :
+                    print(f"Error, transaction not founded: {dest_dir} is {dir} or {old_acc} is not {dest_old_acc} or {new_acc} is not {dest_new_acc} or {amount} is not {-dest_amount}")
                 continue
             
             print(f"Row {i} + {dest_i} is transaction: dir:{str(dir)}, {dest_old_acc} --> {dest_new_acc}, amount: {amount} {currency}")
