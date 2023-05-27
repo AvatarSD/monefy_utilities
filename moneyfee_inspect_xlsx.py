@@ -77,6 +77,9 @@ mm_table = pd.DataFrame(columns=['date',
                                  'project',
                                  'tags',
                                  'comment'])
+currencies = []
+accounts = []
+categories = []
 
 print(moneyfee_table)
 print("Shape of import", moneyfee_table.shape)
@@ -97,7 +100,11 @@ for i,row in moneyfee_table.iterrows():
     amount = float(str(row['converted amount']).replace(" ","").replace("\xa0",""))
     amount_orig = float(str(row['amount']).replace(" ","").replace("\xa0",""))
     currency = row['currency.1']
+    
     dest_amount = 0.0
+
+    if old_acc not in accounts: accounts.append(old_acc)
+    if category not in categories: categories.append(category)
 
     # 1.2 transaction
     categoty_match = re.match(r"(To|From) '(.*?)'", category)
@@ -137,6 +144,7 @@ for i,row in moneyfee_table.iterrows():
             moneyfee_table.at[dest_i, 'handled'] = True
             if currency == def_currency: stats.transaction = stats.transaction + 1
             else: stats.conversion = stats.conversion + 1
+            if currency not in currencies: currencies.append(currency)
             
             # 1.2.4 save transfer
             mm.date = row["date"]
@@ -187,5 +195,8 @@ print(f'>> Total: {stats.sell+stats.buy+stats.transaction*2+stats.conversion*2+l
 
 # 4. Save new list in specific format
 mm_table.to_excel("unhandled.xlsx")
+print("Currencies:", currencies)
+print("Accounts:", accounts)
+print("Categories:", categories)
 # for mm in mm_table:
 #     print(mm.to_str())
