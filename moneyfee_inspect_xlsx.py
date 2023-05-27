@@ -2,6 +2,7 @@ import sys
 import pandas as pd
 import re
 import enum
+from datetime import datetime as dt
 
 
 # Types
@@ -16,20 +17,23 @@ class stats:
 
 class money_move:
     def __init__(self):
-        self.date_payment = None
-        self.date_income = None
-        self.date_begin = None
-        self.date_end = None
-        self.amount = 0
-        self.amount_company = None
-        self.account_from = None
-        self.account_to = None
-        self.categoty = str("-")
-        self.categoty_sub = None
-        self.agent = None
-        self.project = None
-        self.tags = []
-        self.comment = None
+        self.date = dt.fromtimestamp(0)    # Дата платежу
+        self.date_income = str("")         # Дата нарахування
+        self.date_begin = str("")          # Період нарахування (дата "з")
+        self.date_end = str("")            # Період нарахування (дата "по")
+        self.amount = 0                    # Сума в валюті рахунка*
+        self.amount_company = str("")      # Сума в валюті компанії
+        self.account_tx = str("")          # З рахунку - для оплати
+        self.account_rx = str("")          # На рахунок - для надходжень 
+        self.categoty = str("")            # Категорія
+        self.categoty_sub = str("")        # Підкатегорія
+        self.agent = str("")               # Контрагент
+        self.project = str("")             # Проект
+        self.tags = []                     # Теги
+        self.comment = str("")             # Коментар		
+
+    def to_str(self) -> str:
+        return str("dat: ") + str(self.date) + str("\t\tamo: ") + str(self.amount) + str("\t\tamo_com: ") + str(self.amount_company) + str("\t\tatx: ") + str(self.account_tx) + str("\t\tarx: ") + str(self.account_rx) + str("\t\tcat: ") + str(self.categoty) + str("\t\tmsg: ") + str(self.comment) + str("\t\t")
 
 
 # PARSE ARGS
@@ -41,6 +45,8 @@ if len(sys.argv) < 2:
 # 0. Init required vars
 moneyfee_table = pd.read_excel(sys.argv[1], engine='openpyxl')
 mm_table = []
+
+print(moneyfee_table)
 print("Shape of import", moneyfee_table.shape)
 
 # 1. Add additional column "handled"
@@ -48,7 +54,7 @@ moneyfee_table['handled'] = False
 
 # 2. Iterate over rows of dataframe
 for i,row in moneyfee_table.iterrows():
-    print(f'{i+1}\{len(moneyfee_table)}           \r')
+    print(f'{i+1}\{len(moneyfee_table)}           ',end='\r')
     if row["handled"] == True: continue
     mm = money_move()
 
@@ -86,7 +92,7 @@ for i,row in moneyfee_table.iterrows():
                     print(f"Error, transaction not founded: {dest_dir} is {dir} or {old_acc} is not {dest_old_acc} or {new_acc} is not {dest_new_acc} or {amount} is not {-dest_amount}\r\n")
                 continue
             
-            print(f"Row {i} + {dest_i} is transaction: dir:{str(dir)}, {dest_old_acc} --> {dest_new_acc}, amount: {amount} {currency}\r\n")
+            print(f"Row {i} + {dest_i} is transaction: dir:{str(dir)}, {dest_old_acc} --> {dest_new_acc}, amount: {amount} {currency}")
             
             # 1.2.3 mark dest handled
             dest_row['handled'] = True
@@ -109,13 +115,13 @@ for i,row in moneyfee_table.iterrows():
     row['handled'] = True
 print('>>>>\r\n')
 
-# 3. Check unhandled
+# 3. Check unhandled; Print inspection stat
 ungandled = moneyfee_table.loc[(moneyfee_table['handled'] == False)]
-# ungandled.to_excel("unhandled.xlsl")
 print(ungandled)
-
-# 4. Save new list in specific format
+# ungandled.to_excel("unhandled.xlsl")
 print(f'Solds: {stats.sell}, stats.buys: {stats.buy}, stats.transaction: {stats.transaction}, Err: {len(ungandled)}')
 print(f'>> Total: {stats.sell+stats.buy+stats.transaction*2+len(ungandled)}/{len(moneyfee_table)}')
 
-# print(moneyfee_table)
+# 4. Save new list in specific format
+for mm in mm_table:
+    print(mm.to_str())
