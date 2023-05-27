@@ -44,6 +44,8 @@ if len(sys.argv) < 2:
 
 # 0. Init required vars
 moneyfee_table = pd.read_excel(sys.argv[1], engine='openpyxl')
+moneyfee_table.columns = ['date', 'account', 'category', 'amount', 'currency.1', "converted amount", "converted currency", "description"]
+
 def_currency = str("UAH")
 mm_table = []
 
@@ -63,8 +65,8 @@ for i,row in moneyfee_table.iterrows():
     # 1.1 Check category
     category = row["category"]
     old_acc = row['account']
-    amount = float(str(row['amount']).replace(" ","").replace("\xa0",""))
-    amount_conv = float(str(row['converted amount']).replace(" ","").replace("\xa0",""))
+    amount = float(str(row['converted amount']).replace(" ","").replace("\xa0",""))
+    amount_orig = float(str(row['amount']).replace(" ","").replace("\xa0",""))
     currency = row['currency.1']
 
     # 1.2 transaction
@@ -86,7 +88,7 @@ for i,row in moneyfee_table.iterrows():
             dest_dir = dir_t.DIRECT if dest_categoty_match.group(1) == 'From' else dir_t.INVERT
             dest_new_acc = dest_row['account']
             dest_old_acc = dest_categoty_match.group(2)
-            dest_amount = float(str(dest_row['amount']).replace(" ","").replace("\xa0",""))
+            dest_amount = float(str(dest_row['converted amount']).replace(" ","").replace("\xa0",""))
 
             # 1.2.2.2 same -amount value in "amount" field
             # 1.2.2.3 same account from 'category' column (%s in From or To) 
@@ -104,12 +106,12 @@ for i,row in moneyfee_table.iterrows():
             
             # 1.2.4 save transfer
             mm.date = row["date"]
-            mm.amount = abs(amount)
+            mm.amount = abs(amount) if currency == def_currency else abs(amount_orig)
+            mm.amount_company = str("") if currency == def_currency else abs(amount)            
             mm.account_rx = old_acc if dir == dir_t.DIRECT else new_acc
             mm.account_tx = old_acc if dir == dir_t.INVERT else new_acc
             mm.categoty = str("transfer")
             mm.comment = old_acc + str(" ") + new_acc
-            mm.amount_company = str("") if currency == def_currency else abs(amount_conv)
             mm_table.append(mm)
 
             # 1.2.5 break, continue
@@ -120,8 +122,8 @@ for i,row in moneyfee_table.iterrows():
         # 1.3.1 save transfer
         dir = dir_t.INVERT if amount > 0 else dir_t.DIRECT
         mm.date = row["date"]
-        mm.amount = abs(amount)
-        mm.amount_company = str("") if currency == def_currency else abs(amount_conv)
+        mm.amount = abs(amount) if currency == def_currency else abs(amount_orig)
+        mm.amount_company = str("") if currency == def_currency else abs(amount) 
         mm.account_tx = old_acc if dir == dir_t.DIRECT else str("")
         mm.account_rx = old_acc if dir == dir_t.INVERT else str("")
         mm.categoty = category
