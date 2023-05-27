@@ -12,6 +12,7 @@ class dir_t(enum.Enum):
 
 class stats:
     transaction = 0
+    conversion = 0
     buy = 0
     sell = 0
 
@@ -90,6 +91,9 @@ for i,row in moneyfee_table.iterrows():
             dest_new_acc = dest_row['account']
             dest_old_acc = dest_categoty_match.group(2)
             dest_amount = float(str(dest_row['converted amount']).replace(" ","").replace("\xa0",""))
+            dest_amount_orig = float(str(dest_row['amount']).replace(" ","").replace("\xa0",""))
+            dest_currency = dest_row['currency.1']
+            if dir == dir_t.INVERT: currency = dest_currency
 
             # 1.2.2.2 same -amount value in "amount" field
             # 1.2.2.3 same account from 'category' column (%s in From or To) 
@@ -98,20 +102,21 @@ for i,row in moneyfee_table.iterrows():
                     print(f"Error, transaction not founded: {dest_dir} is {dir} or {old_acc} is not {dest_old_acc} or {new_acc} is not {dest_new_acc} or {amount} is not {-dest_amount}")
                 continue
             
-            print(f"Row {i} + {dest_i} is transaction: dir:{str(dir)}, {dest_old_acc} --> {dest_new_acc}, amount: {amount} {currency}")
-            
+            print(f"Row {i} + {dest_i} is transaction: dir:{str(dir)}, {dest_old_acc} --> {dest_new_acc}, amount: {abs(amount) if currency == def_currency else abs(dest_amount_orig)} {currency}")
+
             # 1.2.3 mark dest handled
             moneyfee_table.at[i, 'handled'] = True
             moneyfee_table.at[dest_i, 'handled'] = True
-            stats.transaction = stats.transaction + 1
+            if currency == def_currency: stats.transaction = stats.transaction + 1
+            else: stats.conversion = stats.conversion + 1
             
             # 1.2.4 save transfer
             mm.date = row["date"]
-            mm.amount = abs(amount) if currency == def_currency else abs(amount_orig)
+            mm.amount = abs(amount) if currency == def_currency else abs(dest_amount_orig)
             mm.amount_company = str("") if currency == def_currency else abs(amount)            
             mm.account_rx = old_acc if dir == dir_t.DIRECT else new_acc
             mm.account_tx = old_acc if dir == dir_t.INVERT else new_acc
-            mm.categoty = str("transfer")
+            mm.categoty = str("transfer") if currency == def_currency else str("exchange")
             mm.comment = old_acc + str(" ") + new_acc
             mm_table.append(mm)
 
