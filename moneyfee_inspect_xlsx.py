@@ -44,6 +44,7 @@ if len(sys.argv) < 2:
 
 # 0. Init required vars
 moneyfee_table = pd.read_excel(sys.argv[1], engine='openpyxl')
+def_currency = str("UAH")
 mm_table = []
 
 print(moneyfee_table)
@@ -62,6 +63,7 @@ for i,row in moneyfee_table.iterrows():
     category = row["category"]
     old_acc = row['account']
     amount = float(str(row['amount']).replace(" ","").replace("\xa0",""))
+    amount_conv = float(str(row['converted amount']).replace(" ","").replace("\xa0",""))
     currency = row['currency.1']
 
     # 1.2 transaction
@@ -98,15 +100,34 @@ for i,row in moneyfee_table.iterrows():
             dest_row['handled'] = True
             
             # 1.2.4 save transfer
-            stats.transaction = stats.transaction + 1
+            mm.date = row["date"]
+            mm.amount = abs(amount)
+            mm.account_rx = old_acc if dir == dir_t.DIRECT else new_acc
+            mm.account_tx = old_acc if dir == dir_t.INVERT else new_acc
+            mm.categoty = str("transfer")
+            mm.comment = old_acc + str(" ") + new_acc
+            mm.amount_company = str("") if currency == def_currency else abs(amount_conv)
+            mm_table.append(mm)
 
             # 1.2.5 break, continue
             break
         
     # 1.3 Regular
     else:
+        # 1.3.1 save transfer
+        dir = dir_t.INVERT if amount > 0 else dir_t.DIRECT
+        mm.date = row["date"]
+        mm.amount = abs(amount)
+        mm.amount_company = str("") if currency == def_currency else abs(amount_conv)
+        mm.account_tx = old_acc if dir == dir_t.DIRECT else str("")
+        mm.account_rx = old_acc if dir == dir_t.INVERT else str("")
+        mm.categoty = category
+        dsc = row["description"]
+        mm.comment = str("") if ((dsc is None) or (str("nan") == str(dsc))) else row["description"]
+        mm_table.append(mm)
+
         # 1.3.2 save stats transaction
-        if amount > 0:
+        if dir == dir_t.INVERT:
             stats.sell = stats.sell+1
         else:
             stats.buy = stats.buy+1
