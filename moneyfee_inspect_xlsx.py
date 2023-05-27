@@ -68,6 +68,7 @@ for i,row in moneyfee_table.iterrows():
     amount = float(str(row['converted amount']).replace(" ","").replace("\xa0",""))
     amount_orig = float(str(row['amount']).replace(" ","").replace("\xa0",""))
     currency = row['currency.1']
+    dest_amount = 0.0
 
     # 1.2 transaction
     categoty_match = re.match(r"(To|From) '(.*?)'", category)
@@ -116,6 +117,9 @@ for i,row in moneyfee_table.iterrows():
 
             # 1.2.5 break, continue
             break
+        if(amount != -dest_amount):
+            print(f"Amount: {amount}, company amount: {dest_amount}")
+                
         
     # 1.3 Regular
     else:
@@ -145,8 +149,8 @@ print('>>>>\r\n')
 ungandled = moneyfee_table.loc[(moneyfee_table['handled'] == False)]
 print(ungandled)
 # ungandled.to_excel("unhandled.xlsl")
-print(f'Solds: {stats.sell}, stats.buys: {stats.buy}, stats.transaction: {stats.transaction}, Err: {len(ungandled)}')
-print(f'>> Total: {stats.sell+stats.buy+stats.transaction*2+len(ungandled)}/{len(moneyfee_table)}')
+print(f'Solds: {stats.sell}, stats.buys: {stats.buy}, stats.transaction: {stats.transaction}, conv: {stats.conversion}, Err: {len(ungandled)}')
+print(f'>> Total: {stats.sell+stats.buy+stats.transaction*2+stats.conversion*2+len(ungandled)}/{len(moneyfee_table)}')
 
 # 4. Save new list in specific format
 for mm in mm_table:
