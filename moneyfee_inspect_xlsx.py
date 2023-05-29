@@ -156,6 +156,10 @@ for i,row in moneyfee_table.iterrows():
             mm.account_tx = old_acc if dir == dir_t.INVERT else new_acc
             mm.categoty = str("transfer") if currency == def_currency else str("exchange")
             mm.comment = old_acc + str(" ") + new_acc
+           
+            # >>> Option: filter out required accounts
+            # if(dest_new_acc == "bkp usd" or dest_new_acc == "bkp uah" or old_acc == "bkp usd" or old_acc == "bkp uah"):
+            #     mm_table.loc[len(mm_table)] = mm.row()
             mm_table.loc[len(mm_table)] = mm.row()
 
             # 1.2.5 break, continue
@@ -176,6 +180,10 @@ for i,row in moneyfee_table.iterrows():
         mm.categoty = category
         dsc = row["description"]
         mm.comment = str("") if ((dsc is None) or (str("nan") == str(dsc))) else row["description"]
+        
+        # >>> Option: filter out required accounts
+        # if(old_acc == "bkp usd" or old_acc == "bkp uah"):
+            # mm_table.loc[len(mm_table)] = mm.row()
         mm_table.loc[len(mm_table)] = mm.row()
 
         # 1.3.2 save stats transaction
@@ -195,10 +203,20 @@ print(ungandled)
 print(f'Solds: {stats.sell}, stats.buys: {stats.buy}, stats.transaction: {stats.transaction}, conv: {stats.conversion}, Err: {len(ungandled)}')
 print(f'>> Total: {stats.sell+stats.buy+stats.transaction*2+stats.conversion*2+len(ungandled)}/{len(moneyfee_table)}')
 
-# 4. Save new list in specific format
-mm_table.to_excel("unhandled.xlsx")
+# 4. User conversions
+# >>> Option: filter output table by rules
+# for i,row in mm_table.iterrows():
+#     if row["account_tx"] == "Binance BTC" or row["account_tx"] == "OKX BTC" or row["account_tx"] == "Binance SOL" or \
+#         row["account_rx"] == "Binance BTC" or row["account_rx"] == "OKX BTC" or row["account_rx"] == "Binance SOL" :
+#         mm_table.at[i, "amount"] = mm_table.at[i, "amount"]/1000000
+#         print(i, "updated to", mm_table.at[i, "amount"], ",", row["account_tx"], "-->" + row["account_rx"])
+
+# 5. Save new list in specific format
 print("Currencies:", currencies)
 print("Accounts:", accounts)
 print("Categories:", categories)
+# >>> Option: print out
 # for mm in mm_table:
 #     print(mm.to_str())
+# >>> Option: save to exel
+mm_table.to_excel("unhandled.xlsx")
