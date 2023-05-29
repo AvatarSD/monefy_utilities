@@ -130,6 +130,8 @@ for i,row in moneyfee_table.iterrows():
             dest_currency = dest_row['currency.1']
             if dir == dir_t.INVERT: currency = dest_currency
 
+            if dest_new_acc not in accounts: accounts.append(dest_new_acc)
+
             # 1.2.2.2 same -amount value in "amount" field
             # 1.2.2.3 same account from 'category' column (%s in From or To) 
             if ((dest_dir.value == dir.value) or (old_acc != dest_old_acc) or (new_acc != dest_new_acc) or (amount != -dest_amount)): 
